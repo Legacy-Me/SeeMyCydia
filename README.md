@@ -1,6 +1,6 @@
 # SeeMyCydia
 
-Access the live generator here: https://legacy-me.github.io/seemycydia/
+Access the live generator here: https://legacy-me.github.io/SeeMyCydia/
 
 SeeMyCydia is a powerful, client-side HTML/JS generator designed to compile and export fully functional, static APT repositories for jailbroken iOS devices. It allows you to build custom repositories compatible with **Cydia, Sileo, Zebra, and Installer** entirely within your web browser—no server-side backend required.
 
