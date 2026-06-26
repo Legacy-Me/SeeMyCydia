@@ -1,0 +1,666 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>SeeMyCydia - Repo Suite Dashboard</title>
+    <link rel="icon" type="image/png" href="icons/GLOBEICON.png">
+    
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/jszip/3.10.1/jszip.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/pako/2.1.0/pako.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/crypto-js/4.2.0/crypto-js.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/gh/antimatter15/bzip2.js@master/bzip2.js"></script>
+    
+    <style>
+        :root {
+            --ios-blue: #385487;
+            --bg-stripe: #cbd2d8;
+            --border-dark: #ababab;
+        }
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+            background: #cbd2d8 linear-gradient(90deg, #c5cdd3 50%, transparent 50%);
+            background-size: 4px 100%;
+            margin: 0; padding: 20px; color: #222;
+        }
+        .dashboard-container {
+            max-width: 1200px; margin: 0 auto; background: #f4f5f7;
+            border: 1px solid var(--border-dark); border-radius: 12px;
+            box-shadow: 0 4px 20px rgba(0,0,0,0.25); overflow: hidden;
+            display: grid; grid-template-columns: 380px 1fr; min-height: 85vh;
+        }
+        .sidebar {
+            background: #e1e4eb; border-right: 1px solid var(--border-dark);
+            padding: 20px; box-sizing: border-box; display: flex; flex-direction: column; gap: 15px; overflow-y: auto;
+        }
+        .sidebar-brand-wrapper {
+            width: 100%; background: #ffffff; border: 1px solid var(--border-dark); border-radius: 8px;
+            box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1); padding: 15px; display: flex; align-items: center; gap: 16px; box-sizing: border-box; margin-bottom: 5px;
+        }
+        .sidebar-brand-img { width: 64px; height: 64px; object-fit: contain; flex-shrink: 0; }
+        .sidebar-brand-title { font-size: 24px; font-weight: 800; color: #222222; letter-spacing: -0.75px; text-shadow: 0 1px 0 rgba(255,255,255,0.8); }
+        .main-workspace { padding: 25px; overflow-y: auto; box-sizing: border-box; background: #ffffff; }
+        h2 { margin: 0 0 12px 0; font-size: 18px; color: #4c566c; text-shadow: 0 1px 0 #fff; }
+        .form-group { margin-bottom: 12px; }
+        label { display: block; font-weight: bold; font-size: 13px; color: #4c566c; margin-bottom: 5px; }
+        input[type="text"], textarea { width: 100%; padding: 8px 10px; border: 1px solid var(--border-dark); border-radius: 6px; box-shadow: inset 0 1px 3px rgba(0,0,0,0.1); font-size: 14px; box-sizing: border-box; outline: none; }
+        textarea { resize: vertical; min-height: 80px; }
+        input::placeholder, textarea::placeholder { color: #a9a9a9; font-weight: normal; }
+        .btn { display: block; width: 100%; padding: 10px; font-size: 14px; font-weight: bold; text-align: center; color: white; border: 1px solid #1a3d80; border-radius: 6px; background: linear-gradient(to bottom, #7aa1df 0%, #4373ca 50%, #2a5cb4 51%, #2452a3 100%); box-shadow: inset 0 1px 0 rgba(255,255,255,0.4); cursor: pointer; margin-bottom: 10px; }
+        .btn:active { background: linear-gradient(to bottom, #2452a3 0%, #1a3d80 100%); }
+        .btn-green { background: linear-gradient(to bottom, #99d16a 0%, #5fa136 50%, #4a8c23 51%, #3f7d1a 100%); border-color: #2c5912; margin-top: auto; }
+        .btn-green:active { background: linear-gradient(to bottom, #3f7d1a 0%, #2c5912 100%); }
+        .package-item { background: #fff; border: 1px solid var(--border-dark); border-radius: 8px; padding: 10px; margin-bottom: 8px; font-size: 13px; display: flex; justify-content: space-between; align-items: center; }
+        .package-item span { font-weight: bold; }
+        .delete-pkg { color: #cc0000; cursor: pointer; font-weight: bold; }
+        .ios6-preview-box { background: #ffffff; border: 1px solid var(--border-dark); border-radius: 10px; box-shadow: 0 1px 3px rgba(0, 0, 0, 0.15); overflow: hidden; }
+        .ios6-preview-row { display: flex; justify-content: space-between; align-items: center; padding: 12px 15px; font-size: 16px; font-weight: bold; color: var(--ios-blue); text-decoration: none; border-bottom: 1px solid #e0e0e0; background: #ffffff; }
+        .ios6-preview-row:last-child { border-bottom: none; }
+        .ios6-chevron { width: 8px; height: 8px; border-top: 3px solid #7f7f7f; border-right: 3px solid #7f7f7f; transform: rotate(45deg); }
+
+        /* CUSTOM iOS 6 STYLE NOTIFICATION SYSTEM */
+        .ios6-alert {
+            position: fixed;
+            left: 20px;
+            top: -400px; /* Starts off-screen top-left */
+            width: 290px;
+            background: linear-gradient(to bottom, #1d2b49, #091227);
+            border: 2px solid #e6e6e6;
+            border-radius: 10px;
+            box-shadow: 0 6px 24px rgba(0,0,0,0.6), inset 0 1px 0 rgba(255,255,255,0.4);
+            padding: 18px;
+            color: #ffffff;
+            text-align: center;
+            font-family: "Helvetica Neue", Helvetica, Arial, sans-serif;
+            z-index: 10000;
+            transition: top 0.5s cubic-bezier(0.175, 0.885, 0.32, 1.275); /* Smooth bounce effect */
+        }
+        .ios6-alert.show {
+            top: 50%; /* Animates down to middle-left */
+            transform: translateY(-50%);
+        }
+        .ios6-alert-title {
+            font-size: 18px;
+            font-weight: bold;
+            margin-bottom: 8px;
+            text-shadow: 0 -1px 0 rgba(0,0,0,0.8);
+        }
+        .ios6-alert-msg {
+            font-size: 14px;
+            margin-bottom: 18px;
+            line-height: 1.3;
+            text-shadow: 0 -1px 0 rgba(0,0,0,0.8);
+        }
+        .ios6-alert-btn {
+            display: block; width: 100%; padding: 11px; margin-bottom: 10px;
+            background: linear-gradient(to bottom, #86aeee 0%, #4c7ecc 50%, #3065bf 51%, #2659ac 100%);
+            border: 1px solid #0f182b; border-radius: 6px;
+            color: white; font-weight: bold; font-size: 15px;
+            text-shadow: 0 -1px 0 rgba(0,0,0,0.6); cursor: pointer;
+            box-shadow: inset 0 1px 0 rgba(255,255,255,0.4), 0 1px 2px rgba(0,0,0,0.3);
+        }
+        .ios6-alert-btn:last-child { margin-bottom: 0; }
+        .ios6-alert-btn:active { background: linear-gradient(to bottom, #2659ac 0%, #1a3d80 100%); }
+    </style>
+</head>
+<body>
+
+    <div id="ios-alert-box" class="ios6-alert">
+        <div class="ios6-alert-title" id="ios-alert-title">Notification</div>
+        <div class="ios6-alert-msg" id="ios-alert-msg">Message goes here.</div>
+        <div id="ios-alert-buttons"></div>
+    </div>
+
+    <div class="dashboard-container">
+        
+        <div class="sidebar">
+            <div class="sidebar-brand-wrapper">
+                <img src="icons/LOGO.png" class="sidebar-brand-img" onerror="this.src='CydiaIcon.png';" alt="Logo">
+                <div class="sidebar-brand-title">SeeMyCydia</div>
+            </div>
+
+            <h2>Repo Settings</h2>
+            <div class="form-group">
+                <label>Repository Name</label>
+                <input type="text" id="repoName" placeholder="Your Repo Name">
+            </div>
+            <div class="form-group">
+                <label>Repository Root URL</label>
+                <input type="text" id="repoUrl" placeholder="Your repo domain">
+            </div>
+            <div class="form-group">
+                <label>Upload Repo Icon (Cydia logo - Must be 120x120)</label>
+                <input type="file" id="repoIconFile" accept="image/png">
+            </div>
+            <div class="form-group">
+                <label>About Me Statement</label>
+                <textarea id="aboutText" placeholder="Your Bio"></textarea>
+            </div>
+
+            <h2>Support RetroWeirdos Projects</h2>
+            <div class="ios6-preview-box">
+                <a href="https://x.com/RetroWeirdos" target="_blank" class="ios6-preview-row">X <div class="ios6-chevron"></div></a>
+                <a href="https://www.reddit.com/user/Total_Negotiation608/" target="_blank" class="ios6-preview-row">Reddit <div class="ios6-chevron"></div></a>
+                <a href="https://www.youtube.com/@RetroWeirdos" target="_blank" class="ios6-preview-row">YouTube <div class="ios6-chevron"></div></a>
+            </div>
+
+            <hr style="border: 0; border-top: 1px solid var(--border-dark); margin: 5px 0;">
+            
+            <h2>Tweak Package Database</h2>
+            <div id="packageListContainer"></div>
+            
+            <button class="btn btn-green" onclick="triggerDownloadSequence()">Compile & Export Suite ZIP</button>
+        </div>
+
+        <div class="main-workspace">
+            <h2>Upload & Map New Debian Tweak Package</h2>
+            <div style="background: #fcfcfc; border: 1px dashed var(--border-dark); padding: 20px; border-radius: 8px; margin-bottom: 20px;">
+                <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 15px;">
+                    <div class="form-group">
+                        <label>Select Tweak .deb File</label>
+                        <input type="file" id="debFile" accept=".deb">
+                    </div>
+                    <div class="form-group">
+                        <label>Upload Tweak Icon (.png)</label>
+                        <input type="file" id="pkgIconFile" accept="image/png">
+                    </div>
+                    <div class="form-group">
+                        <label>Package Name</label>
+                        <input type="text" id="pkgName" placeholder="PinterestX">
+                    </div>
+                    <div class="form-group">
+                        <label>Package Identifier (ID)</label>
+                        <input type="text" id="pkgId" placeholder="com.retroweirdos.pinterestx">
+                    </div>
+                    <div class="form-group">
+                        <label>Exact Version Tag</label>
+                        <input type="text" id="pkgVersion" value="1.0.0">
+                    </div>
+                    <div class="form-group">
+                        <label>Section Category</label>
+                        <input type="text" id="pkgSection" value="Tweaks">
+                    </div>
+                </div>
+                <div class="form-group">
+                    <label>Short Index Subtitle</label>
+                    <input type="text" id="pkgSubtitle" placeholder="Fixes Pinterest crash loops on legacy iOS 5+ systems.">
+                </div>
+                <div class="form-group">
+                    <label>Detailed Features List (One item per line)</label>
+                    <textarea id="pkgFeatures" placeholder="Fixes launch initialization crashes&#10;Blocks update verification alerts"></textarea>
+                </div>
+                <div class="form-group">
+                    <label>Target Execution Requirements</label>
+                    <input type="text" id="pkgDepends" value="mobilesubstrate, firmware (>= 5.0)">
+                </div>
+                
+                <div style="display: flex; gap: 15px; margin-top: 15px;">
+                    <button class="btn" style="background: linear-gradient(to bottom, #6d829e 0%, #425574 100%); border-color: #2d3b52;" onclick="addPackageToManifest(false)">Build & Save Tweak</button>
+                    <button class="btn" onclick="addPackageToManifest(true)">Add More Packages</button>
+                </div>
+            </div>
+        </div>
+
+    </div>
+
+    <script>
+        let packagesDatabase = [];
+        let globalRepoIconBlob = null;
+
+        // Custom iOS Notification logic to replace all chrome alerts
+        function closeAlert() {
+            document.getElementById('ios-alert-box').classList.remove('show');
+        }
+
+        function showIos6Alert(title, msg, buttons) {
+            document.getElementById('ios-alert-title').innerText = title;
+            document.getElementById('ios-alert-msg').innerText = msg;
+            const btnContainer = document.getElementById('ios-alert-buttons');
+            btnContainer.innerHTML = '';
+            
+            buttons.forEach(b => {
+                const btn = document.createElement('button');
+                btn.className = 'ios6-alert-btn';
+                btn.innerText = b.text;
+                btn.onclick = b.action;
+                btnContainer.appendChild(btn);
+            });
+
+            const alertBox = document.getElementById('ios-alert-box');
+            alertBox.classList.remove('show');
+            setTimeout(() => { alertBox.classList.add('show'); }, 10);
+        }
+
+        document.getElementById('repoIconFile').addEventListener('change', function(e) {
+            const file = e.target.files[0];
+            if (!file) return;
+            const img = new Image();
+            img.src = URL.createObjectURL(file);
+            img.onload = function() {
+                if (this.width === 120 && this.height === 120) {
+                    globalRepoIconBlob = file;
+                    showIos6Alert("Success", "Repo Icon verified (120x120)!", [{text: "OK", action: closeAlert}]);
+                } else {
+                    document.getElementById('repoIconFile').value = '';
+                    globalRepoIconBlob = null;
+                    showIos6Alert("Invalid Size", `Size is ${this.width}x${this.height}px. It must be exactly 120x120.`, [{text: "Dismiss", action: closeAlert}]);
+                }
+            };
+        });
+
+        function calculateHashes(fileBlob) {
+            return new Promise((resolve) => {
+                const reader = new FileReader();
+                reader.onload = function(e) {
+                    const arrayBuffer = e.target.result;
+                    const wordArray = CryptoJS.lib.WordArray.create(arrayBuffer);
+                    const md5 = CryptoJS.MD5(wordArray).toString();
+                    const sha1 = CryptoJS.SHA1(wordArray).toString();
+                    const sha256 = CryptoJS.SHA256(wordArray).toString();
+                    resolve({ md5, sha1, sha256 });
+                };
+                reader.readAsArrayBuffer(fileBlob);
+            });
+        }
+
+        async function addPackageToManifest(keepEditing) {
+            const name = document.getElementById('pkgName').value;
+            const id = document.getElementById('pkgId').value;
+            const version = document.getElementById('pkgVersion').value;
+            const section = document.getElementById('pkgSection').value;
+            const subtitle = document.getElementById('pkgSubtitle').value;
+            const features = document.getElementById('pkgFeatures').value.split('\n').filter(l => l.trim() !== '');
+            const depends = document.getElementById('pkgDepends').value;
+            const fileInput = document.getElementById('debFile');
+            const iconInput = document.getElementById('pkgIconFile');
+
+            if(!name || !id || !version || !fileInput.files[0]) {
+                showIos6Alert("Incomplete Data", "Please upload a valid .deb file and specify Name, ID, and Version.", [{text: "OK", action: closeAlert}]);
+                return;
+            }
+
+            const activeFile = fileInput.files[0];
+            const hashes = await calculateHashes(activeFile);
+
+            const packageRecord = {
+                name, id, version, section, subtitle, features, depends, hashes,
+                filename: activeFile.name,
+                fileBlob: activeFile,
+                iconBlob: iconInput.files[0] || null
+            };
+
+            packagesDatabase.push(packageRecord);
+            renderPackageList();
+            
+            if(keepEditing) {
+                document.getElementById('pkgName').value = '';
+                document.getElementById('pkgId').value = '';
+                document.getElementById('pkgVersion').value = '1.0.0';
+                document.getElementById('pkgSubtitle').value = '';
+                document.getElementById('pkgFeatures').value = '';
+                fileInput.value = '';
+                iconInput.value = '';
+            } else {
+                showIos6Alert("Tweak Saved", "Package record added with hash generation values!", [{text: "Awesome", action: closeAlert}]);
+            }
+        }
+
+        function renderPackageList() {
+            const container = document.getElementById('packageListContainer');
+            container.innerHTML = '';
+            packagesDatabase.forEach((pkg, index) => {
+                container.innerHTML += `
+                    <div class="package-item">
+                        <div><span>${pkg.name}</span> (${pkg.version})</div>
+                        <div class="delete-pkg" onclick="removePackage(${index})">✕</div>
+                    </div>
+                `;
+            });
+        }
+
+        function removePackage(index) {
+            packagesDatabase.splice(index, 1);
+            renderPackageList();
+        }
+
+        function generatePackagesFile() {
+            let fileContent = '';
+            packagesDatabase.forEach(pkg => {
+                fileContent += `Package: ${pkg.id}\n`;
+                fileContent += `Name: ${pkg.name}\n`;
+                fileContent += `Version: ${pkg.version}\n`;
+                fileContent += `Architecture: iphoneos-arm\n`;
+                fileContent += `Depends: ${pkg.depends}\n`;
+                fileContent += `Filename: debs/${pkg.filename}\n`;
+                fileContent += `Size: ${pkg.fileBlob.size}\n`;
+                fileContent += `MD5sum: ${pkg.hashes.md5}\n`;
+                fileContent += `SHA1: ${pkg.hashes.sha1}\n`;
+                fileContent += `SHA256: ${pkg.hashes.sha256}\n`;
+                fileContent += `Section: ${pkg.section}\n`;
+                fileContent += `Description: ${pkg.subtitle}\n\n`;
+            });
+            return fileContent.trim() + "\n";
+        }
+
+        function compressToBzip2(textData) {
+            const bytes = [];
+            for (let i = 0; i < textData.length; i++) {
+                bytes.push(textData.charCodeAt(i) & 0xff);
+            }
+            try {
+                return bzip2.compress(bytes);
+            } catch (err) {
+                const encoder = new TextEncoder();
+                return pako.gzip(encoder.encode(textData));
+            }
+        }
+
+        function generateReleaseFile(repoName, rawPackages, gzBytes, bz2Bytes) {
+            const encoder = new TextEncoder();
+            
+            const rawBytes = encoder.encode(rawPackages);
+            const rawWordArray = CryptoJS.lib.WordArray.create(rawBytes.buffer);
+            const rawSize = rawBytes.length;
+            const rawMd5 = CryptoJS.MD5(rawWordArray).toString();
+            const rawSha1 = CryptoJS.SHA1(rawWordArray).toString();
+            const rawSha256 = CryptoJS.SHA256(rawWordArray).toString();
+
+            const gzWordArray = CryptoJS.lib.WordArray.create(gzBytes.buffer);
+            const gzSize = gzBytes.length;
+            const gzMd5 = CryptoJS.MD5(gzWordArray).toString();
+            const gzSha1 = CryptoJS.SHA1(gzWordArray).toString();
+            const gzSha256 = CryptoJS.SHA256(gzWordArray).toString();
+
+            const bz2WordArray = CryptoJS.lib.WordArray.create(bz2Bytes.buffer);
+            const bz2Size = bz2Bytes.length;
+            const bz2Md5 = CryptoJS.MD5(bz2WordArray).toString();
+            const bz2Sha1 = CryptoJS.SHA1(bz2WordArray).toString();
+            const bz2Sha256 = CryptoJS.SHA256(bz2WordArray).toString();
+
+            let r = `Origin: ${repoName}\nLabel: ${repoName}\nSuite: stable\nVersion: 1.0\nCodename: ios\nArchitectures: iphoneos-arm\nComponents: main\nDescription: Static architecture manifest mapping suite indices.\n`;
+            
+            r += `MD5Sum:\n`;
+            r += ` ${rawMd5} ${rawSize} Packages\n`;
+            r += ` ${gzMd5} ${gzSize} Packages.gz\n`;
+            r += ` ${bz2Md5} ${bz2Size} Packages.bz2\n`;
+            
+            r += `SHA1:\n`;
+            r += ` ${rawSha1} ${rawSize} Packages\n`;
+            r += ` ${gzSha1} ${gzSize} Packages.gz\n`;
+            r += ` ${bz2Sha1} ${bz2Size} Packages.bz2\n`;
+
+            r += `SHA256:\n`;
+            r += ` ${rawSha256} ${rawSize} Packages\n`;
+            r += ` ${gzSha256} ${gzSize} Packages.gz\n`;
+            r += ` ${bz2Sha256} ${bz2Size} Packages.bz2\n`;
+            
+            return r;
+        }
+
+        function generateIndexHtml() {
+            let repoName = document.getElementById('repoName').value;
+            let repoUrl = document.getElementById('repoUrl').value;
+            let aboutText = document.getElementById('aboutText').value;
+
+            if (!repoName.trim()) { repoName = "Your Repo Name"; }
+            if (!repoUrl.trim()) { repoUrl = "Your repo domain"; }
+            if (!aboutText.trim()) { aboutText = "Your Bio"; }
+
+            let packagesRows = '';
+            let depictionsViews = '';
+
+            packagesDatabase.forEach(pkg => {
+                const cleanPageId = `${pkg.id.replace(/\./g, '-')}-page`;
+                
+                packagesRows += `
+                    <a onclick="switchPage('${cleanPageId}')" class="table-row row-link main-row-link">
+                        <div class="pkg-row-layout">
+                            <img src="icons/${pkg.name}.png" onerror="this.src='icons/GLOBEICON.png'" class="pkg-row-icon" alt="Icon">
+                            <div>
+                                ${pkg.name}
+                                <span class="pkg-subtitle">${pkg.subtitle}</span>
+                            </div>
+                        </div>
+                    </a>`;
+
+                let featuresListItems = '';
+                pkg.features.forEach(feat => { featuresListItems += `<li>${feat}</li>`; });
+
+                depictionsViews += `
+                <div id="${cleanPageId}" class="page-view">
+                    <div class="back-nav-container">
+                        <div onclick="switchPage('repo-main-page')" class="ios6-back-button"><span>Back</span></div>
+                    </div>
+                    <div class="header-section">
+                        <div class="header-card" style="max-width: 100%; background: transparent; border: none; box-shadow: none; padding: 10px 0; flex-direction: column; gap: 12px; text-align: center;">
+                            <div class="repo-icon-wrapper" style="border-radius: 18px; margin: 0 auto;">
+                                <img src="icons/${pkg.name}.png" onerror="this.src='icons/GLOBEICON.png'" class="repo-icon" alt="Icon">
+                            </div>
+                            <div>
+                                <div style="font-family: -apple-system-headline, sans-serif; font-size: 32px; font-weight: bold; color: #000; text-shadow: 0 1px 0 #fff;">${pkg.name}</div>
+                                <p style="font-size: 15px; margin: 6px 0 0 0; color: #333; line-height: 1.4;">${pkg.subtitle}</p>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="depiction-header">Features</div>
+                    <div class="table-group depiction-group">
+                        <div class="depiction-text-block">
+                            <ul class="depiction-list">${featuresListItems}</ul>
+                        </div>
+                    </div>
+                    <div class="depiction-header">Requirements</div>
+                    <div class="table-group depiction-group">
+                        <div class="depiction-text-block">
+                            <ul class="depiction-list"><li>${pkg.depends}</li></ul>
+                        </div>
+                    </div>
+                </div>`;
+            });
+
+            return `<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>${repoName}</title>
+    <link rel="icon" type="image/png" href="icons/GLOBEICON.png">
+    <link rel="apple-touch-icon" href="icons/GLOBEICON.png">
+    <style>
+        body { font-family: -apple-system-body, "Helvetica Neue", Helvetica, Arial, sans-serif; background-color: #cbd2d8; background-image: linear-gradient(90deg, #c5cdd3 50%, transparent 50%); background-size: 4px 100%; margin: 0; padding: 0; display: flex; justify-content: center; -webkit-font-smoothing: antialiased; }
+        .container { width: 100%; max-width: 960px; padding: 15px; box-sizing: border-box; }
+        .header-section { display: flex; justify-content: center; margin-bottom: 20px; }
+        .header-card { background: #ffffff; border: 1px solid #ababab; border-radius: 8px; box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1); padding: 20px 35px; display: flex; align-items: center; gap: 25px; width: 100%; max-width: 600px; box-sizing: border-box; }
+        .repo-icon-wrapper { width: 80px; height: 80px; border-radius: 18px; overflow: hidden; box-shadow: 0 2px 4px rgba(0,0,0,0.3); display: block; flex-shrink: 0; background: #fff; }
+        .repo-icon { width: 100%; height: 100%; object-fit: cover; transform: scale(1.02); }
+        .repo-title { font-family: -apple-system-headline, "Helvetica Neue", Helvetica, Arial, sans-serif; font-size: 38px; font-weight: 800; color: #000000; letter-spacing: -1.5px; line-height: 1.1; text-shadow: 0 1px 0 rgba(255, 255, 255, 0.8); }
+        .repo-title span { display: inline; }
+        .section-title { font-family: -apple-system-short-headline, "Helvetica Neue", Helvetica, Arial, sans-serif; font-size: 20px; font-weight: bold; color: #4d566f; text-shadow: 0 1px 0 rgba(255, 255, 255, 0.7); margin: 0 0 8px 8px; }
+        .depiction-header { background: linear-gradient(to bottom, #f2f3f5 0%, #dcdee4 50%, #cfd2db 51%, #e1e4eb 100%); border: 1px solid #ababab; border-bottom: 1px solid #a1a1a1; color: #4c566c; font-size: 15px; font-weight: bold; padding: 7px 15px; text-shadow: 0 1px 0 rgba(255, 255, 255, 0.75); border-top-left-radius: 8px; border-top-right-radius: 8px; margin-top: 15px; }
+        .table-group { background: #ffffff; border: 1px solid #ababab; border-radius: 10px; box-shadow: 0 1px 3px rgba(0, 0, 0, 0.15); margin-bottom: 20px; padding: 0; overflow: hidden; width: 100%; box-sizing: border-box; }
+        .table-group.depiction-group { border-top-left-radius: 0; border-top-right-radius: 0; border-top: none; margin-bottom: 15px; }
+        .table-row { display: block; position: relative; padding: 14px 15px; font-size: 17px; font-weight: bold; color: #222222; text-decoration: none; border-bottom: 1px solid #e0e0e0; background: #ffffff; box-sizing: border-box; -webkit-tap-highlight-color: transparent; }
+        .table-row:last-child { border-bottom: none; }
+        .row-link { color: #385487; font-weight: bold; cursor: pointer; }
+        .row-link:active { background: #e5e5e5; color: #385487; }
+        .row-static { color: #000000; font-weight: normal; }
+        .row-desc { font-family: -apple-system-body, "Helvetica Neue", Helvetica, Arial, sans-serif; font-size: 16px; color: #222222; line-height: 1.4; display: block; }
+        .pkg-row-layout { display: flex; align-items: center; gap: 12px; padding-right: 15px; }
+        .pkg-row-icon { width: 32px; height: 32px; border-radius: 7px; box-shadow: 0 1px 2px rgba(0,0,0,0.2); flex-shrink: 0; }
+        .depiction-text-block { padding: 15px; font-size: 15px; color: #222222; line-height: 1.5; background: #ffffff; }
+        .depiction-list { margin: 0; padding-left: 20px; }
+        .depiction-list li { margin-bottom: 10px; font-size: 15px; color: #222222; }
+        .pkg-subtitle { font-size: 13px; color: #666666; font-weight: normal; display: block; margin-top: 2px; line-height: 1.2; }
+        
+        .seemycydia-credit { text-align: center; font-size: 12px; font-weight: bold; color: #566c89; text-shadow: 0 1px 0 rgba(255, 255, 255, 0.6); margin-top: 30px; margin-bottom: 15px; }
+        .seemycydia-credit a { color: #385487; text-decoration: none; }
+        .back-nav-container { margin-bottom: 20px; padding-left: 5px; display: flex; align-items: center; }
+        .ios6-back-button { position: relative; display: inline-flex; align-items: center; height: 28px; padding: 0 12px 0 14px; margin-left: 14px; background: linear-gradient(to bottom, #6d829e 0%, #566c89 48%, #495e7c 52%, #425574 100%); border: 1px solid #2d3b52; border-left: none; border-top-right-radius: 5px; border-bottom-right-radius: 5px; box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.3), 0 1px 2px rgba(0,0,0,0.2); color: #ffffff; font-size: 12px; font-weight: bold; text-shadow: 0 -1px 0 rgba(0, 0, 0, 0.5); text-decoration: none; cursor: pointer; user-select: none; -webkit-tap-highlight-color: transparent; }
+        .ios6-back-button::before { content: ""; position: absolute; top: 3px; left: -10px; width: 20px; height: 20px; background: linear-gradient(135deg, #6d829e 0%, #566c89 48%, #495e7c 52%, #425574 100%); border-left: 1px solid #2d3b52; border-bottom: 1px solid #2d3b52; transform: rotate(45deg); border-bottom-left-radius: 4px; box-shadow: inset 1px -1px 0 rgba(255, 255, 255, 0.2); z-index: 1; }
+        .ios6-back-button span { position: relative; z-index: 2; }
+        .main-row-link::after { content: ""; position: absolute; right: 18px; top: 50%; width: 7px; height: 7px; border-top: 3px solid #7f7f7f; border-right: 3px solid #7f7f7f; transform: translateY(-50%) rotate(45deg); }
+        .dashboard-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 20px; align-items: start; }
+        .column { display: flex; flex-direction: column; gap: 0; }
+        .page-view { display: none; }
+        .page-view.active-view { display: block; }
+        .dashboard-block { display: block; width: 100%; }
+
+        @media (max-width: 768px) {
+            .dashboard-grid { display: flex; flex-direction: column; gap: 0; width: 100%; }
+            .column { display: contents; }
+            .container { padding: 10px; }
+            .header-card { max-width: 100%; gap: 15px; padding: 12px 15px; }
+            .repo-title { font-size: 26px; letter-spacing: -1px; line-height: 1.15; }
+            .repo-title span { display: block; }
+            .repo-icon-wrapper { width: 64px; height: 64px; border-radius: 14px; }
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <div id="repo-main-page" class="page-view active-view">
+            <div class="header-section">
+                <div class="header-card">
+                    <div class="repo-icon-wrapper">
+                        <img src="icons/LOGO.png" class="repo-icon" onerror="this.onerror=null; this.src='CydiaIcon.png';" alt="Icon">
+                    </div>
+                    <div class="repo-title">${repoName}</div>
+                </div>
+            </div>
+
+            <div class="dashboard-grid">
+                <div class="column">
+                    <div class="dashboard-block block-package-managers">
+                        <div class="section-title">Add to Package Manager</div>
+                        <div class="table-group">
+                            <div class="table-row row-static" style="font-weight: bold;">${repoName}</div>
+                            <a href="cydia://url/https://cydia.saurik.com/api/share#?source=${repoUrl}" class="table-row row-link main-row-link">Add to Cydia</a>
+                            <a href="sileo://source/${repoUrl}" class="table-row row-link main-row-link">Add to Sileo</a>
+                            <a href="zbra://sources/add/${repoUrl}" class="table-row row-link main-row-link">Add to Zebra</a>
+                            <a href="installer://add/${repoUrl}" class="table-row row-link main-row-link">Add to Installer</a>
+                        </div>
+                    </div>
+                    
+                    <div class="dashboard-block block-social">
+                        <div class="section-title">Support RetroWeirdos Projects</div>
+                        <div class="table-group">
+                            <a href="https://x.com/RetroWeirdos" target="_blank" class="table-row row-link main-row-link">X</a>
+                            <a href="https://www.reddit.com/user/Total_Negotiation608/" target="_blank" class="table-row row-link main-row-link">Reddit</a>
+                            <a href="https://www.youtube.com/@RetroWeirdos" target="_blank" class="table-row row-link main-row-link">YouTube</a>
+                        </div>
+                    </div>
+                </div>
+                <div class="column">
+                    <div class="dashboard-block block-about-me">
+                        <div class="section-title">About Me</div>
+                        <div class="table-group">
+                            <div class="table-row row-static" style="padding: 15px 18px;">
+                                <span class="row-desc">${aboutText}</span>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="dashboard-block block-featured">
+                        <div class="section-title">Featured Packages</div>
+                        <div class="table-group">${packagesRows}</div>
+                    </div>
+                </div>
+            </div>
+
+            <div class="seemycydia-credit">
+                Made with SeeMyCydia by <a href="https://www.youtube.com/@RetroWeirdos" target="_blank">RetroWeirdos on youtube</a>
+            </div>
+        </div>
+        ${depictionsViews}
+    </div>
+
+    <script>
+        function switchPage(pageId) {
+            var views = document.querySelectorAll('.page-view');
+            views.forEach(function(v) { v.classList.remove('active-view'); });
+            var target = document.getElementById(pageId);
+            if(target) { target.classList.add('active-view'); window.scrollTo(0, 0); }
+        }
+    <\/script>
+</body>
+</html>`;
+        }
+
+        // TRIGGER THE NEW iOS 6 EXPORT DOWNLOAD SEQUENCE
+        function triggerDownloadSequence() {
+            if(packagesDatabase.length === 0) {
+                showIos6Alert("Empty Archive", "Please build at least one Tweak Record before downloading.", [{text: "Dismiss", action: closeAlert}]);
+                return;
+            }
+
+            // Fire the 7-Zip intercept warning notification
+            showIos6Alert(
+                "Security Warning",
+                "EXTRACT WITH 7-ZIP ONLY",
+                [
+                    {
+                        text: "I don't have 7-zip",
+                        action: function() {
+                            window.open("https://www.7-zip.org/download.html", "_blank");
+                            closeAlert();
+                        }
+                    },
+                    {
+                        text: "I have 7-zip",
+                        action: function() {
+                            closeAlert();
+                            processAndDownloadZip(); // Launch compilation sequence
+                        }
+                    }
+                ]
+            );
+        }
+
+        function processAndDownloadZip() {
+            const zip = new JSZip();
+            let repoName = document.getElementById('repoName').value;
+            if (!repoName.trim()) { repoName = "Your Repo Name"; }
+
+            const rawPackagesText = generatePackagesFile();
+            const encoder = new TextEncoder();
+            const uint8Data = encoder.encode(rawPackagesText);
+            
+            const compressedGz = pako.gzip(uint8Data);
+            const compressedBz2 = compressToBzip2(rawPackagesText);
+
+            const debsFolder = zip.folder("debs");
+            const iconsFolder = zip.folder("icons");
+
+            zip.file("index.html", generateIndexHtml());
+            
+            // Raw text file included back with its native structure format
+            zip.file("Packages", rawPackagesText);
+            zip.file("Packages.gz", compressedGz);
+            zip.file("Packages.bz2", compressedBz2);
+            
+            // Release output rebuilt with full native architecture extension
+            const cleanReleaseText = generateReleaseFile(repoName, rawPackagesText, compressedGz, compressedBz2);
+            zip.file("Release", cleanReleaseText);
+
+            if (globalRepoIconBlob) {
+                zip.file("CydiaIcon.png", globalRepoIconBlob);
+            }
+
+            packagesDatabase.forEach(pkg => {
+                debsFolder.file(pkg.filename, pkg.fileBlob);
+                if (pkg.iconBlob) {
+                    iconsFolder.file(`${pkg.name}.png`, pkg.iconBlob);
+                }
+            });
+
+            zip.generateAsync({type:"blob"}).then(function(content) {
+                const link = document.createElement('a');
+                link.href = URL.createObjectURL(content);
+                link.download = `${repoName}-CydiaRepo.zip`;
+                document.body.appendChild(link);
+                link.click();
+                document.body.removeChild(link);
+            });
+        }
+    </script>
+
+</body>
+</html>
