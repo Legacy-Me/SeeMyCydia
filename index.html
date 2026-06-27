@@ -5,8 +5,8 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>SeeMyCydia</title>
     <link rel="icon" type="image/png" href="icons/GLOBEICON.png">
-    <link rel="apple-touch-icon" href="icons/GLOBEICON.png">
     
+    <!-- Dependencies for Hashing, Zipping, and Bzip2 -->
     <script src="https://cdnjs.cloudflare.com/ajax/libs/jszip/3.10.1/jszip.min.js"></script>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/pako/2.1.0/pako.min.js"></script>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/crypto-js/4.2.0/crypto-js.min.js"></script>
@@ -47,7 +47,7 @@
         input[type="text"], textarea { width: 100%; padding: 8px 10px; border: 1px solid var(--border-dark); border-radius: 6px; box-shadow: inset 0 1px 3px rgba(0,0,0,0.1); font-size: 14px; box-sizing: border-box; outline: none; }
         textarea { resize: vertical; min-height: 80px; }
         input::placeholder, textarea::placeholder { color: #a9a9a9; font-weight: normal; }
-        .btn { display: block; width: 100%; padding: 10px; font-size: 14px; font-weight: bold; text-align: center; color: white; border: 1px solid #1a3d80; border-radius: 6px; background: linear-gradient(to bottom, #7aa1df 0%, #4373ca 50%, #2a5cb4 51%, #2452a3 100%); box-shadow: inset 0 1px 0 rgba(255,255,255,0.4); cursor: pointer; margin-bottom: 10px; }
+        .btn { display: block; width: 100%; padding: 10px; font-size: 14px; font-weight: bold; text-align: center; color: white; border: 1px solid #1a3d80; border-radius: 6px; background: linear-gradient(to bottom, #7aa1df 0%, #4373ca 50%, #2a5cb4 51%, #2452a3 100%); box-shadow: inset 0 1px 0 rgba(255,255,255,0.4); cursor: pointer; margin-bottom: 10px; transition: opacity 0.2s; }
         .btn:active { background: linear-gradient(to bottom, #2452a3 0%, #1a3d80 100%); }
         .btn-green { background: linear-gradient(to bottom, #99d16a 0%, #5fa136 50%, #4a8c23 51%, #3f7d1a 100%); border-color: #2c5912; margin-top: auto; }
         .btn-green:active { background: linear-gradient(to bottom, #3f7d1a 0%, #2c5912 100%); }
@@ -63,8 +63,8 @@
         .ios6-alert {
             position: fixed;
             left: 50%;
-            transform: translateX(-50%); /* Horizontally centered */
-            top: -400px; /* Starts hidden above screen */
+            transform: translateX(-50%);
+            top: -400px;
             width: 290px;
             background: linear-gradient(to bottom, #1d2b49, #091227);
             border: 2px solid #e6e6e6;
@@ -77,43 +77,20 @@
             z-index: 10000;
             transition: top 0.6s cubic-bezier(0.34, 1.56, 0.64, 1), transform 0.6s cubic-bezier(0.34, 1.56, 0.64, 1);
         }
-        
-        .ios6-alert.banner.show {
-            top: 20px; 
-            transform: translateX(-50%);
-        }
-
-        .ios6-alert.modal.show {
-            top: 50%; 
-            transform: translate(-50%, -50%); /* Shifts to exact middle vertically */
-        }
-
-        .ios6-alert-title {
-            font-size: 18px;
-            font-weight: bold;
-            margin-bottom: 8px;
-            text-shadow: 0 -1px 0 rgba(0,0,0,0.8);
-        }
-        .ios6-alert-msg {
-            font-size: 14px;
-            margin-bottom: 10px;
-            line-height: 1.3;
-            text-shadow: 0 -1px 0 rgba(0,0,0,0.8);
-        }
-        .ios6-alert-btn {
-            display: block; width: 100%; padding: 11px; margin-top: 10px;
-            background: linear-gradient(to bottom, #86aeee 0%, #4c7ecc 50%, #3065bf 51%, #2659ac 100%);
-            border: 1px solid #0f182b; border-radius: 6px;
-            color: white; font-weight: bold; font-size: 15px;
-            text-shadow: 0 -1px 0 rgba(0,0,0,0.6); cursor: pointer;
-            box-shadow: inset 0 1px 0 rgba(255,255,255,0.4), 0 1px 2px rgba(0,0,0,0.3);
-        }
+        .ios6-alert.banner.show { top: 20px; transform: translateX(-50%); }
+        .ios6-alert.modal.show { top: 50%; transform: translate(-50%, -50%); }
+        .ios6-alert-title { font-size: 18px; font-weight: bold; margin-bottom: 8px; text-shadow: 0 -1px 0 rgba(0,0,0,0.8); }
+        .ios6-alert-msg { font-size: 14px; margin-bottom: 10px; line-height: 1.3; text-shadow: 0 -1px 0 rgba(0,0,0,0.8); }
+        .ios6-alert-btn { display: block; width: 100%; padding: 11px; margin-top: 10px; background: linear-gradient(to bottom, #86aeee 0%, #4c7ecc 50%, #3065bf 51%, #2659ac 100%); border: 1px solid #0f182b; border-radius: 6px; color: white; font-weight: bold; font-size: 15px; text-shadow: 0 -1px 0 rgba(0,0,0,0.6); cursor: pointer; box-shadow: inset 0 1px 0 rgba(255,255,255,0.4), 0 1px 2px rgba(0,0,0,0.3); }
         .ios6-alert-btn:last-child { margin-bottom: 0; }
         .ios6-alert-btn:active { background: linear-gradient(to bottom, #2659ac 0%, #1a3d80 100%); }
+        
+        .tweak-form-block { background: #fcfcfc; border: 1px dashed var(--border-dark); padding: 20px; border-radius: 8px; margin-bottom: 20px; transition: opacity 0.3s ease; }
     </style>
 </head>
 <body>
 
+    <!-- DYNAMIC iOS 6 NOTIFICATION INJECTION BLOCK -->
     <div id="ios-alert-box" class="ios6-alert">
         <div class="ios6-alert-title" id="ios-alert-title">Notification</div>
         <div class="ios6-alert-msg" id="ios-alert-msg">Message goes here.</div>
@@ -135,7 +112,7 @@
             </div>
             <div class="form-group">
                 <label>Repository Root URL</label>
-                <input type="text" id="repoUrl" value="https://legacy-me.github.io/seemycydia/" placeholder="Your repo domain">
+                <input type="text" id="repoUrl" value="https://legacy-me.github.io/SeeMyCydia/" placeholder="Your repo domain">
             </div>
             <div class="form-group">
                 <label>Upload Repo Icon (Cydia logo - Must be 120x120)</label>
@@ -162,54 +139,58 @@
         </div>
 
         <div class="main-workspace">
-            <h2>Upload & Map New Debian Tweak Package</h2>
-            <div style="background: #fcfcfc; border: 1px dashed var(--border-dark); padding: 20px; border-radius: 8px; margin-bottom: 20px;">
-                <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 15px;">
-                    <div class="form-group">
-                        <label>Select Tweak .deb File</label>
-                        <input type="file" id="debFile" accept=".deb">
+            <h2>Upload & Map New Debian Tweak Packages</h2>
+            
+            <!-- CONTAINER WHERE INFINITE FORMS SPAWN -->
+            <div id="tweak-forms-container">
+                <div class="tweak-form-block">
+                    <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 15px;">
+                        <div class="form-group">
+                            <label>Select Tweak .deb File</label>
+                            <input type="file" class="debFile" accept=".deb">
+                        </div>
+                        <div class="form-group">
+                            <label>Upload Tweak Icon (.png)</label>
+                            <input type="file" class="pkgIconFile" accept="image/png">
+                        </div>
+                        <div class="form-group">
+                            <label>Package Name</label>
+                            <input type="text" class="pkgName" placeholder="PinterestX">
+                        </div>
+                        <div class="form-group">
+                            <label>Package Identifier (ID)</label>
+                            <input type="text" class="pkgId" placeholder="com.retroweirdos.pinterestx">
+                        </div>
+                        <div class="form-group">
+                            <label>Exact Version Tag</label>
+                            <input type="text" class="pkgVersion" value="1.0.0">
+                        </div>
+                        <div class="form-group">
+                            <label>Section Category</label>
+                            <input type="text" class="pkgSection" value="Tweaks">
+                        </div>
                     </div>
                     <div class="form-group">
-                        <label>Upload Tweak Icon (.png)</label>
-                        <input type="file" id="pkgIconFile" accept="image/png">
+                        <label>Short Index Subtitle</label>
+                        <input type="text" class="pkgSubtitle" placeholder="Fixes Pinterest crash loops on legacy iOS 5+ systems.">
                     </div>
                     <div class="form-group">
-                        <label>Package Name</label>
-                        <input type="text" id="pkgName" placeholder="PinterestX">
+                        <label>Detailed Features List (One item per line)</label>
+                        <textarea class="pkgFeatures" placeholder="Fixes launch initialization crashes&#10;Blocks update verification alerts"></textarea>
                     </div>
                     <div class="form-group">
-                        <label>Package Identifier (ID)</label>
-                        <input type="text" id="pkgId" placeholder="com.retroweirdos.pinterestx">
+                        <label>Target Execution Requirements</label>
+                        <input type="text" class="pkgDepends" value="mobilesubstrate, firmware (>= 5.0)">
                     </div>
-                    <div class="form-group">
-                        <label>Exact Version Tag</label>
-                        <input type="text" id="pkgVersion" value="1.0.0">
+                    
+                    <div style="display: flex; gap: 15px; margin-top: 15px;">
+                        <button class="btn save-btn" style="background: linear-gradient(to bottom, #6d829e 0%, #425574 100%); border-color: #2d3b52;" onclick="addPackageToManifest(this)">Build & Save Tweak</button>
+                        <button class="btn" onclick="spawnNewPackageForm()">Add More Packages</button>
                     </div>
-                    <div class="form-group">
-                        <label>Section Category</label>
-                        <input type="text" id="pkgSection" value="Tweaks">
-                    </div>
-                </div>
-                <div class="form-group">
-                    <label>Short Index Subtitle</label>
-                    <input type="text" id="pkgSubtitle" placeholder="Fixes Pinterest crash loops on legacy iOS 5+ systems.">
-                </div>
-                <div class="form-group">
-                    <label>Detailed Features List (One item per line)</label>
-                    <textarea id="pkgFeatures" placeholder="Fixes launch initialization crashes&#10;Blocks update verification alerts"></textarea>
-                </div>
-                <div class="form-group">
-                    <label>Target Execution Requirements</label>
-                    <input type="text" id="pkgDepends" value="mobilesubstrate, firmware (>= 5.0)">
-                </div>
-                
-                <div style="display: flex; gap: 15px; margin-top: 15px;">
-                    <button class="btn" style="background: linear-gradient(to bottom, #6d829e 0%, #425574 100%); border-color: #2d3b52;" onclick="addPackageToManifest(false)">Build & Save Tweak</button>
-                    <button class="btn" onclick="addPackageToManifest(true)">Add More Packages</button>
                 </div>
             </div>
-        </div>
 
+        </div>
     </div>
 
     <script>
@@ -217,6 +198,7 @@
         let globalRepoIconBlob = null;
         let alertTimeout = null;
 
+        // Custom iOS Animation Engine for Main Dashboard Only
         function closeAlert() {
             const alertBox = document.getElementById('ios-alert-box');
             alertBox.classList.remove('show');
@@ -289,16 +271,45 @@
             });
         }
 
-        async function addPackageToManifest(keepEditing) {
-            const name = document.getElementById('pkgName').value;
-            const id = document.getElementById('pkgId').value;
-            const version = document.getElementById('pkgVersion').value;
-            const section = document.getElementById('pkgSection').value;
-            const subtitle = document.getElementById('pkgSubtitle').value;
-            const features = document.getElementById('pkgFeatures').value.split('\n').filter(l => l.trim() !== '');
-            const depends = document.getElementById('pkgDepends').value;
-            const fileInput = document.getElementById('debFile');
-            const iconInput = document.getElementById('pkgIconFile');
+        // DYNAMIC BLOCK SPAWNER LOGIC
+        function spawnNewPackageForm() {
+            const container = document.getElementById('tweak-forms-container');
+            const newBlock = document.createElement('div');
+            newBlock.className = 'tweak-form-block';
+            newBlock.innerHTML = `
+                <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 15px;">
+                    <div class="form-group"><label>Select Tweak .deb File</label><input type="file" class="debFile" accept=".deb"></div>
+                    <div class="form-group"><label>Upload Tweak Icon (.png)</label><input type="file" class="pkgIconFile" accept="image/png"></div>
+                    <div class="form-group"><label>Package Name</label><input type="text" class="pkgName" placeholder="PinterestX"></div>
+                    <div class="form-group"><label>Package Identifier (ID)</label><input type="text" class="pkgId" placeholder="com.retroweirdos.pinterestx"></div>
+                    <div class="form-group"><label>Exact Version Tag</label><input type="text" class="pkgVersion" value="1.0.0"></div>
+                    <div class="form-group"><label>Section Category</label><input type="text" class="pkgSection" value="Tweaks"></div>
+                </div>
+                <div class="form-group"><label>Short Index Subtitle</label><input type="text" class="pkgSubtitle" placeholder="Fixes Pinterest crash loops on legacy iOS 5+ systems."></div>
+                <div class="form-group"><label>Detailed Features List (One item per line)</label><textarea class="pkgFeatures" placeholder="Fixes launch initialization crashes&#10;Blocks update verification alerts"></textarea></div>
+                <div class="form-group"><label>Target Execution Requirements</label><input type="text" class="pkgDepends" value="mobilesubstrate, firmware (>= 5.0)"></div>
+                
+                <div style="display: flex; gap: 15px; margin-top: 15px;">
+                    <button class="btn save-btn" style="background: linear-gradient(to bottom, #6d829e 0%, #425574 100%); border-color: #2d3b52;" onclick="addPackageToManifest(this)">Build & Save Tweak</button>
+                    <button class="btn" onclick="spawnNewPackageForm()">Add More Packages</button>
+                </div>
+            `;
+            container.appendChild(newBlock);
+            newBlock.scrollIntoView({ behavior: 'smooth', block: 'end' });
+        }
+
+        async function addPackageToManifest(btnElement) {
+            const block = btnElement.closest('.tweak-form-block');
+            
+            const name = block.querySelector('.pkgName').value;
+            const id = block.querySelector('.pkgId').value;
+            const version = block.querySelector('.pkgVersion').value;
+            const section = block.querySelector('.pkgSection').value;
+            const subtitle = block.querySelector('.pkgSubtitle').value;
+            const features = block.querySelector('.pkgFeatures').value.split('\n').filter(l => l.trim() !== '');
+            const depends = block.querySelector('.pkgDepends').value;
+            const fileInput = block.querySelector('.debFile');
+            const iconInput = block.querySelector('.pkgIconFile');
 
             if(!name || !id || !version || !fileInput.files[0]) {
                 showIos6Alert("Incomplete Data", "Please upload a valid .deb file and specify Name, ID, and Version.");
@@ -318,17 +329,14 @@
             packagesDatabase.push(packageRecord);
             renderPackageList();
             
-            if(keepEditing) {
-                document.getElementById('pkgName').value = '';
-                document.getElementById('pkgId').value = '';
-                document.getElementById('pkgVersion').value = '1.0.0';
-                document.getElementById('pkgSubtitle').value = '';
-                document.getElementById('pkgFeatures').value = '';
-                fileInput.value = '';
-                iconInput.value = '';
-            } else {
-                showIos6Alert("Tweak Saved", "Package record added with hash generation values!");
-            }
+            showIos6Alert("Tweak Saved", `${name} added to the suite!`);
+            
+            // Lock the block to show it has been successfully added to the array
+            btnElement.innerText = "Saved & Locked ✓";
+            btnElement.disabled = true;
+            btnElement.style.opacity = '0.5';
+            block.style.opacity = '0.7';
+            block.style.pointerEvents = 'none'; // Prevent re-editing after saving
         }
 
         function renderPackageList() {
@@ -345,6 +353,8 @@
         }
 
         function removePackage(index) {
+            // Because forms are locked, removing it from the sidebar deletes the database entry.
+            // (The locked visual form remains on screen, but it won't be compiled).
             packagesDatabase.splice(index, 1);
             renderPackageList();
         }
@@ -423,6 +433,7 @@
             return r;
         }
 
+        // FIXED: The resulting index.html for your users is fully stripped of ALL notification code
         function generateIndexHtml() {
             let repoName = document.getElementById('repoName').value;
             let repoUrl = document.getElementById('repoUrl').value;
@@ -610,6 +621,7 @@
 </html>`;
         }
 
+        // TRIGGER THE EXPORT SEQUENCE
         function triggerDownloadSequence() {
             if(packagesDatabase.length === 0) {
                 showIos6Alert("Empty Archive", "Please build at least one Tweak Record before downloading.");
@@ -631,7 +643,7 @@
                         text: "I have 7-zip",
                         action: function() {
                             closeAlert();
-                            processAndDownloadZip();
+                            processAndDownloadZip(); 
                         }
                     }
                 ]

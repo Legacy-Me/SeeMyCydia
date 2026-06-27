@@ -20,7 +20,7 @@ Created by **RetroWeirdos**.
 
 ## How to Use the Generator
 
-1. **Launch the Dashboard:** Open https://legacy-me.github.io/seemycydia/ in any modern web browser.
+1. **Launch the Dashboard:** Open https://legacy-me.github.io/SeeMyCydia/ in any modern web browser.
 2. **Configure Repo Settings:** 
    * Set your **Repository Name** and **Root URL** (e.g., your GitHub Pages domain).
    * Upload a **120x120px Repo Icon**.
